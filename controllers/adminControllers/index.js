@@ -28,7 +28,7 @@ const login = async (req, res) => {
     );
     return res
       .status(200)
-      .json({ status: 200, msg: "Logged in", token: token });
+      .json({ status: 200, message: "Logged in", token: token });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: "An unexpected error occurred" });
