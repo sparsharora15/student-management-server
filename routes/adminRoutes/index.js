@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { login, signup, addSubject, getSubjects, createCourse, getCourses, createTeacher, getTeachers, getTeacherById, archiveTeacher, updateTeacher } = require("../../controllers/adminControllers");
+const { login, signup, addSubject, getSubjects, createCourse, getCourses, createTeacher, getTeachers, getTeacherById, archiveTeacher, updateTeacher, createLecture, getLectures, createUser } = require("../../controllers/adminControllers");
 const { authUser } = require("../../midddleware/auth");
-const Teacher = require('../../models/teacherSchema');
 const upload = require("../../midddleware/imageUploadMiddleware");
 
 router.post("/login", login);
@@ -16,5 +15,8 @@ router.get("/teacher", authUser, getTeachers);
 router.delete("/teacher", authUser, archiveTeacher);
 router.put("/teacher", authUser, upload.single("profilePicture"), updateTeacher);
 router.get("/teacherById", authUser, getTeacherById);
+router.post("/createLecture", authUser, createLecture);
+router.get("/getLectures", authUser, getLectures);
+router.post("/student", authUser, upload.single("profilePicture"), createUser);
 
 module.exports = router;

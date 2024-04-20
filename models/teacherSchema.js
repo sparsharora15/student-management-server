@@ -54,8 +54,8 @@ const TeacherSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['teacher'], // Define allowed roles
-      default: 'teacher' // Set default role
+      enum: ['teacher'], 
+      default: 'teacher' 
     }
   },
   { timestamps: true, autoIndex: false }

@@ -2,6 +2,8 @@ const AdminModel = require("../../models/adminSchema");
 const Subject = require("../../models/subjectsSchema");
 const Teacher = require("../../models/teacherSchema");
 const Course = require("../../models/courseSchema");
+const Lecture = require("../../models/lecturesModel");
+const Student = require("../../models/studentSchema");
 const { md5Hash, capitalizeFirstLetter, generateEmployeeID, sendLoginDetailsEmail, generateRandomPassword } = require("../../services");
 const jwt = require("jsonwebtoken");
 
@@ -253,7 +255,7 @@ const createTeacher = async (req, res) => {
     });
 
     await newTeacher.save();
-    await sendLoginDetailsEmail(email, password); 
+    await sendLoginDetailsEmail(email, password);
     res
       .status(200)
       .json({
@@ -371,6 +373,127 @@ const archiveTeacher = async (req, res) => {
   }
 };
 
+const createLecture = async (req, res) => {
+  try {
+    const { collegeStartTime, collegeEndTime, lectureTime, recessTimeFrom, recessTimeTo } = req.body;
+    const findDocument = await Lecture.find({})
+    console.log()
+    if (findDocument.length !== 0) return res.status(403).json({ message: "Lectures are already created ,If you want to crete new lectures then delete the previous lectures" });
+
+    const startTime = new Date(`1970-01-01T${collegeStartTime}`);
+    const endTime = new Date(`1970-01-01T${collegeEndTime}`);
+
+    const recessStartTime = new Date(`1970-01-01T${recessTimeFrom}`);
+    const recessEndTime = new Date(`1970-01-01T${recessTimeTo}`);
+
+    if (recessStartTime < startTime || recessEndTime > endTime || recessEndTime < recessStartTime) {
+      return res.status(400).json({ message: "Invalid recess time. It should be within college hours and end time should be after start time." });
+    }
+
+    const timeDifference = endTime.getTime() - startTime.getTime();
+
+    const recessTimeDifference = recessEndTime.getTime() - recessStartTime.getTime();
+
+    const totalTimeExcludingRecess = timeDifference - recessTimeDifference;
+
+    const totalHoursExcludingRecess = totalTimeExcludingRecess / (1000 * 60 * 60);
+
+    const lectureDuration = parseInt(lectureTime);
+
+    const lectures = [];
+
+    let currentTime = startTime.getTime();
+    let lectureNumber = 1;
+    while (currentTime < endTime.getTime()) {
+      if (currentTime >= recessStartTime.getTime() && currentTime < recessEndTime.getTime()) {
+        currentTime += lectureDuration * 60 * 1000;
+        continue;
+      }
+
+      const lectureStartTime = new Date(currentTime);
+      const lectureEndTime = new Date(currentTime + lectureDuration * 60 * 1000);
+
+      lectures.push({
+        lectureNumber,
+        startTime: lectureStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        endTime: lectureEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      currentTime += lectureDuration * 60 * 1000;
+      lectureNumber++;
+    }
+    const newLecture = new Lecture({
+      lectures: lectures,
+      recessTime: `${recessTimeFrom} - ${recessTimeTo}`
+    });
+
+    await newLecture.save();
+
+    res.status(201).json({ message: "Lectures created successfully", data: newLecture });
+
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+const getLectures = async (req, res) => {
+  try {
+    const lectures = await Lecture.find({})
+    return res.status(200).json({ data: lectures });
+
+  } catch (err) {
+    console.log(err)
+  }
+}
+const createUser = async (req, res) => {
+  try {
+    const {
+      dob,
+      gender,
+      course,
+      address,
+      fullName,
+      bloodGroup,
+      email,
+      fName,
+      phoneNo,
+    } = req.body;
+
+    const newUser = new Student({
+      dob,
+      gender,
+      course,
+      address,
+      fullName,
+      bloodGroup,
+      email,
+      fName,
+      phoneNo,
+    });
+
+    const error = newUser.validateSync(); // Sync validation
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User with this email already exists" });
+    }
+
+    await newUser.save();
+    res.status(200).json({
+      status: 200,
+      message: "User created successfully",
+      data: newUser,
+    });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 module.exports = {
   login,
   signup,
@@ -382,5 +505,8 @@ module.exports = {
   getTeachers,
   getTeacherById,
   archiveTeacher,
-  updateTeacher
+  updateTeacher,
+  createLecture,
+  getLectures,
+  createUser,
 };
