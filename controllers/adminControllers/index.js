@@ -516,7 +516,7 @@ const createUser = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await Student.findOne({ email });
     if (existingUser) {
       return res
         .status(400)
