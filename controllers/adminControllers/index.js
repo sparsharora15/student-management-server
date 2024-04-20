@@ -4,7 +4,13 @@ const Teacher = require("../../models/teacherSchema");
 const Course = require("../../models/courseSchema");
 const Lecture = require("../../models/lecturesModel");
 const Student = require("../../models/studentSchema");
-const { md5Hash, capitalizeFirstLetter, generateEmployeeID, sendLoginDetailsEmail, generateRandomPassword } = require("../../services");
+const {
+  md5Hash,
+  capitalizeFirstLetter,
+  generateEmployeeID,
+  sendLoginDetailsEmail,
+  generateRandomPassword,
+} = require("../../services");
 const jwt = require("jsonwebtoken");
 
 const { cloudinary } = require("../../constant/index");
@@ -24,10 +30,7 @@ const login = async (req, res) => {
     if (user.password !== md5Hash(password)) {
       return res.status(401).json({ error: "Incorrect password" });
     }
-    const token = jwt.sign(
-      { user },
-      process.env.JWTSECRETKET
-    );
+    const token = jwt.sign({ user }, process.env.JWTSECRETKET);
     return res
       .status(200)
       .json({ status: 200, message: "Logged in", token: token });
@@ -106,13 +109,11 @@ const createCourse = async (req, res) => {
     await newDocument.save();
 
     // Return success response
-    res
-      .status(201)
-      .json({
-        status: 201,
-        message: "Course created successfully",
-        data: newDocument,
-      });
+    res.status(201).json({
+      status: 201,
+      message: "Course created successfully",
+      data: newDocument,
+    });
   } catch (error) {
     // Return error response if something goes wrong
     console.error("Error creating document:", error);
@@ -234,9 +235,9 @@ const createTeacher = async (req, res) => {
     const existingTeacher = await Teacher.findOne({ email: JSON.parse(email) });
     if (existingTeacher) {
       if (existingTeacher.isDelete) {
-        return res
-          .status(400)
-          .json({ message: "User with this email already exists in archived list" });
+        return res.status(400).json({
+          message: "User with this email already exists in archived list",
+        });
       }
       return res
         .status(400)
@@ -256,13 +257,11 @@ const createTeacher = async (req, res) => {
 
     await newTeacher.save();
     await sendLoginDetailsEmail(email, password);
-    res
-      .status(200)
-      .json({
-        status: 200,
-        message: "Teacher created successfully",
-        data: newTeacher,
-      });
+    res.status(200).json({
+      status: 200,
+      message: "Teacher created successfully",
+      data: newTeacher,
+    });
   } catch (error) {
     console.error("Error creating teacher:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -280,7 +279,7 @@ const updateTeacher = async (req, res) => {
       isActive,
       gender,
     } = req.body;
-    console.log(req.body)
+    console.log(req.body);
 
     const teacherId = req.query.teacherId; // Correctly extract teacherId from the request query
 
@@ -301,10 +300,7 @@ const updateTeacher = async (req, res) => {
     }
 
     // Update teacher data using $set
-    await Teacher.updateOne(
-      { _id: teacherId },
-      { $set: updatedTeacherData }
-    );
+    await Teacher.updateOne({ _id: teacherId }, { $set: updatedTeacherData });
 
     // Fetch and return the updated teacher data
     const updatedTeacher = await Teacher.findById(teacherId);
@@ -322,8 +318,11 @@ const updateTeacher = async (req, res) => {
 
 const getTeacherById = async (req, res) => {
   try {
-    const { teacherId } = req.query
-    const teachers = await Teacher.findOne({ _id: teacherId }).populate('teachingDepartment', 'fullName'); // Assuming 'name' is a field in the Course model
+    const { teacherId } = req.query;
+    const teachers = await Teacher.findOne({ _id: teacherId }).populate(
+      "teachingDepartment",
+      "fullName"
+    ); // Assuming 'name' is a field in the Course model
     res.status(200).json({
       status: 200,
       message: "Teachers fetched successfully",
@@ -339,12 +338,16 @@ const getTeachers = async (req, res) => {
     const { isArchived } = req.query;
     let teachers;
 
-    if (isArchived === 'true') {
-      // Fetch all teachers if isArchived is true
-      teachers = await Teacher.find({}).populate('teachingDepartment', 'fullName');
+    if (isArchived === "true") {
+      teachers = await Teacher.find({}).populate(
+        "teachingDepartment",
+        "fullName"
+      );
     } else {
-      // Fetch teachers whose isDelete is false if isArchived is false or not provided
-      teachers = await Teacher.find({ isDelete: false }).populate('teachingDepartment', 'fullName');
+      teachers = await Teacher.find({ isDelete: false }).populate(
+        "teachingDepartment",
+        "fullName"
+      );
     }
 
     res.status(200).json({
@@ -360,9 +363,14 @@ const getTeachers = async (req, res) => {
 
 const archiveTeacher = async (req, res) => {
   try {
-    const { teacherId } = req.query
-    if (!teacherId) return res.status(404).json({ message: "Teacher not found" })
-    await Teacher.findOneAndUpdate({ _id: teacherId }, { isActive: false, isDelete: true }, { returnOriginal: false })
+    const { teacherId } = req.query;
+    if (!teacherId)
+      return res.status(404).json({ message: "Teacher not found" });
+    await Teacher.findOneAndUpdate(
+      { _id: teacherId },
+      { isActive: false, isDelete: true },
+      { returnOriginal: false }
+    );
     return res.status(200).json({
       status: 200,
       message: "Teachers archived successfully",
@@ -375,10 +383,20 @@ const archiveTeacher = async (req, res) => {
 
 const createLecture = async (req, res) => {
   try {
-    const { collegeStartTime, collegeEndTime, lectureTime, recessTimeFrom, recessTimeTo } = req.body;
-    const findDocument = await Lecture.find({})
-    console.log()
-    if (findDocument.length !== 0) return res.status(403).json({ message: "Lectures are already created ,If you want to crete new lectures then delete the previous lectures" });
+    const {
+      collegeStartTime,
+      collegeEndTime,
+      lectureTime,
+      recessTimeFrom,
+      recessTimeTo,
+    } = req.body;
+    const findDocument = await Lecture.find({});
+    console.log();
+    if (findDocument.length !== 0)
+      return res.status(403).json({
+        message:
+          "Lectures are already created ,If you want to crete new lectures then delete the previous lectures",
+      });
 
     const startTime = new Date(`1970-01-01T${collegeStartTime}`);
     const endTime = new Date(`1970-01-01T${collegeEndTime}`);
@@ -386,17 +404,26 @@ const createLecture = async (req, res) => {
     const recessStartTime = new Date(`1970-01-01T${recessTimeFrom}`);
     const recessEndTime = new Date(`1970-01-01T${recessTimeTo}`);
 
-    if (recessStartTime < startTime || recessEndTime > endTime || recessEndTime < recessStartTime) {
-      return res.status(400).json({ message: "Invalid recess time. It should be within college hours and end time should be after start time." });
+    if (
+      recessStartTime < startTime ||
+      recessEndTime > endTime ||
+      recessEndTime < recessStartTime
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid recess time. It should be within college hours and end time should be after start time.",
+      });
     }
 
     const timeDifference = endTime.getTime() - startTime.getTime();
 
-    const recessTimeDifference = recessEndTime.getTime() - recessStartTime.getTime();
+    const recessTimeDifference =
+      recessEndTime.getTime() - recessStartTime.getTime();
 
     const totalTimeExcludingRecess = timeDifference - recessTimeDifference;
 
-    const totalHoursExcludingRecess = totalTimeExcludingRecess / (1000 * 60 * 60);
+    const totalHoursExcludingRecess =
+      totalTimeExcludingRecess / (1000 * 60 * 60);
 
     const lectureDuration = parseInt(lectureTime);
 
@@ -405,18 +432,29 @@ const createLecture = async (req, res) => {
     let currentTime = startTime.getTime();
     let lectureNumber = 1;
     while (currentTime < endTime.getTime()) {
-      if (currentTime >= recessStartTime.getTime() && currentTime < recessEndTime.getTime()) {
+      if (
+        currentTime >= recessStartTime.getTime() &&
+        currentTime < recessEndTime.getTime()
+      ) {
         currentTime += lectureDuration * 60 * 1000;
         continue;
       }
 
       const lectureStartTime = new Date(currentTime);
-      const lectureEndTime = new Date(currentTime + lectureDuration * 60 * 1000);
+      const lectureEndTime = new Date(
+        currentTime + lectureDuration * 60 * 1000
+      );
 
       lectures.push({
         lectureNumber,
-        startTime: lectureStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        endTime: lectureEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        startTime: lectureStartTime.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        endTime: lectureEndTime.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       currentTime += lectureDuration * 60 * 1000;
@@ -424,29 +462,28 @@ const createLecture = async (req, res) => {
     }
     const newLecture = new Lecture({
       lectures: lectures,
-      recessTime: `${recessTimeFrom} - ${recessTimeTo}`
+      recessTime: `${recessTimeFrom} - ${recessTimeTo}`,
     });
 
     await newLecture.save();
 
-    res.status(201).json({ message: "Lectures created successfully", data: newLecture });
-
-
+    res
+      .status(201)
+      .json({ message: "Lectures created successfully", data: newLecture });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 const getLectures = async (req, res) => {
   try {
-    const lectures = await Lecture.find({})
+    const lectures = await Lecture.find({});
     return res.status(200).json({ data: lectures });
-
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
-}
+};
 const createUser = async (req, res) => {
   try {
     const {
@@ -460,18 +497,19 @@ const createUser = async (req, res) => {
       fName,
       phoneNo,
     } = req.body;
-
-    const newUser = new Student({
-      dob,
-      gender,
-      course,
-      address,
-      fullName,
-      bloodGroup,
-      email,
-      fName,
-      phoneNo,
-    });
+    const updatedReqBody = {
+      fullName: JSON.parse(fullName),
+      email: JSON.parse(email),
+      phoneNo: JSON.parse(phoneNo),
+      dob: JSON.parse(dob),
+      address: JSON.parse(address),
+      gender: JSON.parse(gender),
+      fName: fName,
+      profilePicturePublicId: req.file.filename, // Rename if needed
+      course: JSON.parse(course),
+      bloodGroup: JSON.parse(bloodGroup),
+    };
+    const newUser = new Student(updatedReqBody);
 
     const error = newUser.validateSync(); // Sync validation
     if (error) {
@@ -480,7 +518,9 @@ const createUser = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User with this email already exists" });
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists" });
     }
 
     await newUser.save();
@@ -494,6 +534,81 @@ const createUser = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+const getStudent = async (req, res) => {
+  try {
+    const { isArchived } = req.query;
+    let teachers;
+
+    if (isArchived === "true") {
+      teachers = await Student.find({}).populate("course", "fullName");
+    } else {
+      teachers = await Student.find({ isDelete: false }).populate(
+        "course",
+        "fullName"
+      );
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "Teachers fetched successfully",
+      data: teachers,
+    });
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// const updateStudent = async (req, res) => {
+//   try {
+//     const {
+//       dob,
+//       gender,
+//       course,
+//       address,
+//       fullName,
+//       bloodGroup,
+//       email,
+//       fName,
+//       phoneNo,
+//     } = req.body;
+//     const studentId = req.query.studentId; // Correctly extract teacherId from the request query
+    
+//     const updatedReqBody = {
+//       fullName: JSON.parse(fullName),
+//       email: JSON.parse(email),
+//       phoneNo: JSON.parse(phoneNo),
+//       dob: JSON.parse(dob),
+//       address: JSON.parse(address),
+//       gender: JSON.parse(gender),
+//       fName: fName,
+//       profilePicturePublicId: req.file.filename, // Rename if needed
+//       course: JSON.parse(course),
+//       bloodGroup: JSON.parse(bloodGroup),
+//     };
+
+//     const existingStrudent = await Student.findById(studentId);
+//     if (!existingStrudent) {
+//       return res.status(404).json({ message: "student not found" });
+//     }
+
+//     // Update student data using $set
+//     await Student.updateOne({ _id: studentId }, { $set: updatedStudentData });
+
+//     // Fetch and return the updated student data
+//     const updatedStudent = await Student.findById(studentId);
+
+//     res.status(200).json({
+//       status: 200,
+//       message: "Student updated successfully",
+//       data: updatedStudent,
+//     });
+//   } catch (error) {
+//     console.error("Error updating student:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 module.exports = {
   login,
   signup,
@@ -509,4 +624,5 @@ module.exports = {
   createLecture,
   getLectures,
   createUser,
+  getStudent,
 };
