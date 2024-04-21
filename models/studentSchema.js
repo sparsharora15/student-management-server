@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const StudentSchema = new mongoose.Schema(
   {
     dob: {
       type: String,
@@ -10,8 +10,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    course: {
+    erollmentNo: {
       type: String,
+      required: true,
+    },
+    course: {
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: "Course",
     },
@@ -37,6 +41,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true, autoIndex: false }
 );
 
-const User = mongoose.model("Student", userSchema);
+const StudentModel = mongoose.model("Student", StudentSchema);
 
-module.exports = User;
+module.exports = StudentModel;

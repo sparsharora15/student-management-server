@@ -12,6 +12,7 @@ const {
   generateRandomPassword,
 } = require("../../services");
 const jwt = require("jsonwebtoken");
+const QRCode = require("qrcode");
 
 const { cloudinary } = require("../../constant/index");
 
@@ -497,6 +498,18 @@ const createUser = async (req, res) => {
       fName,
       phoneNo,
     } = req.body;
+    // Get current year
+    const currentYear = new Date().getFullYear().toString();
+
+    // Get student count
+    const studentCount = await Student.countDocuments();
+
+    // Increment student count and pad with leading zeroes
+    const studentIndex = (studentCount + 1).toString().padStart(2, "0");
+
+    // Combine student index, "800", and the current year to form the enrollment number
+    const enrollmentNo = `${studentIndex}800${currentYear}`;
+
     const updatedReqBody = {
       fullName: JSON.parse(fullName),
       email: JSON.parse(email),
@@ -504,17 +517,28 @@ const createUser = async (req, res) => {
       dob: JSON.parse(dob),
       address: JSON.parse(address),
       gender: JSON.parse(gender),
-      fName: fName,
+      fName: JSON.parse(fName),
       profilePicturePublicId: req.file.filename, // Rename if needed
       course: JSON.parse(course),
+      erollmentNo: enrollmentNo, // Add enrollment number to the request body
       bloodGroup: JSON.parse(bloodGroup),
     };
-    const newUser = new Student(updatedReqBody);
-
-    const error = newUser.validateSync(); // Sync validation
+    console.log(req.file.filename);
+    const { error } = Student.validate(updatedReqBody);
     if (error) {
-      return res.status(400).json({ message: error.message });
+      return res.status(400).json({ message: error.details[0].message });
     }
+    if (updatedReqBody.profilePicturePublicId) {
+      cloudinaryResponse = await cloudinary.uploader.upload(req.file.path); // Use req.file.path
+      console.log(cloudinaryResponse);
+    }
+    const { profilePicturePublicId, ...rest } = updatedReqBody;
+    const newUser = new Student({
+      profilePicturePublicId: cloudinaryResponse
+        ? cloudinaryResponse.secure_url
+        : null,
+      ...rest,
+    });
 
     const existingUser = await Student.findOne({ email });
     if (existingUser) {
@@ -537,28 +561,56 @@ const createUser = async (req, res) => {
 const getStudent = async (req, res) => {
   try {
     const { isArchived } = req.query;
-    let teachers;
+    let students;
 
     if (isArchived === "true") {
-      teachers = await Student.find({}).populate("course", "fullName");
-    } else {
-      teachers = await Student.find({ isDelete: false }).populate(
+      students = await Student.find({ isArchived: true }).populate(
         "course",
         "fullName"
       );
+    } else {
+      students = await Student.find({}).populate("course", "fullName");
+      console.log(students);
     }
 
     res.status(200).json({
       status: 200,
-      message: "Teachers fetched successfully",
-      data: teachers,
+      message: "Students fetched successfully",
+      data: students,
     });
   } catch (error) {
-    console.error("Error fetching teachers:", error);
+    console.error("Error fetching students:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+const getStudentById = async (req, res) => {
+  try {
+    const API_BASE_URL = process.env.API_BASE_URL
+    const { studentId } = req.query;
+    const student = await Student.findOne({ _id: studentId }).populate(
+      "course",
+      "fullName"
+    );
 
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const qrCodeContent = `${API_BASE_URL}/studentById/${student._id}`;
+    const qrCodeImage = await QRCode.toDataURL(qrCodeContent);
+    console.log(qrCodeImage)
+    return res.status(200).json({
+      status: 200,
+      message: "Student fetched successfully",
+      data: {
+        student,
+        qrCodeImage,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching student:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 // const updateStudent = async (req, res) => {
 //   try {
 //     const {
@@ -573,7 +625,7 @@ const getStudent = async (req, res) => {
 //       phoneNo,
 //     } = req.body;
 //     const studentId = req.query.studentId; // Correctly extract teacherId from the request query
-    
+
 //     const updatedReqBody = {
 //       fullName: JSON.parse(fullName),
 //       email: JSON.parse(email),
@@ -625,4 +677,5 @@ module.exports = {
   getLectures,
   createUser,
   getStudent,
+  getStudentById,
 };

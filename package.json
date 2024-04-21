@@ -13,7 +13,8 @@
     "nanoid": "^5.0.7",
     "node": "^21.6.2",
     "nodemailer": "^6.9.13",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "qrcode": "^1.5.3"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
