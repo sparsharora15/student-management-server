@@ -595,7 +595,7 @@ const getStudentById = async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
-    const qrCodeContent = `${API_BASE_URL}/studentById/${student._id}`;
+    const qrCodeContent = `https://student-management-server-mn17.onrender.com/api/admin/studentById/${student._id}`;
     const qrCodeImage = await QRCode.toDataURL(qrCodeContent);
     console.log(qrCodeImage)
     return res.status(200).json({
