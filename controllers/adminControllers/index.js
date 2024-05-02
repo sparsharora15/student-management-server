@@ -24,17 +24,28 @@ const login = async (req, res) => {
       return res.status(400).json({ error: "Invalid email address" });
     }
 
-    const user = await AdminModel.findOne({ email: email });
-    if (!user) {
+    const admin = await AdminModel.findOne({ email: email });
+    const teacher = await Teacher.findOne({ email: email, isDelete: false });
+    if (!admin && !teacher) {
       return res.status(400).json({ error: "Email not found" });
     }
-    if (user.password !== md5Hash(password)) {
-      return res.status(401).json({ error: "Incorrect password" });
+    if (admin) {
+      if (admin.password !== md5Hash(password)) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+      const token = jwt.sign({ admin }, process.env.JWTSECRETKET);
+      return res
+        .status(200)
+        .json({ status: 200, message: "Logged in", token: token });
+    } else if (teacher) {
+      if (teacher.password !== md5Hash(password)) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+      const token = jwt.sign({ user:teacher }, process.env.JWTSECRETKET);
+      return res
+        .status(200)
+        .json({ status: 200, message: "Logged in", token: token });
     }
-    const token = jwt.sign({ user }, process.env.JWTSECRETKET);
-    return res
-      .status(200)
-      .json({ status: 200, message: "Logged in", token: token });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: "An unexpected error occurred" });
@@ -249,20 +260,28 @@ const createTeacher = async (req, res) => {
       cloudinaryResponse = await cloudinary.uploader.upload(req.file.path); // Use req.file.path
     }
     const { profilePicturePublicId, ...rest } = updatedReqBody;
-    const newTeacher = new Teacher({
-      ...rest,
-      profilePicturePublicId: cloudinaryResponse
-        ? cloudinaryResponse.secure_url
-        : null,
-    });
 
-    await newTeacher.save();
-    await sendLoginDetailsEmail(email, password);
-    res.status(200).json({
-      status: 200,
-      message: "Teacher created successfully",
-      data: newTeacher,
-    });
+    const mail = await sendLoginDetailsEmail(email, password);
+    console.log(mail);
+    if (mail) {
+      const newTeacher = new Teacher({
+        ...rest,
+        profilePicturePublicId: cloudinaryResponse
+          ? cloudinaryResponse.secure_url
+          : null,
+      });
+      await newTeacher.save();
+      return res.status(200).json({
+        status: 200,
+        message: "Teacher created successfully",
+        data: newTeacher,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: "Something went wrong",
+      });
+    }
   } catch (error) {
     console.error("Error creating teacher:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -585,7 +604,6 @@ const getStudent = async (req, res) => {
 };
 const getStudentById = async (req, res) => {
   try {
-    const API_BASE_URL = process.env.API_BASE_URL
     const { studentId } = req.query;
     const student = await Student.findOne({ _id: studentId }).populate(
       "course",
@@ -595,9 +613,15 @@ const getStudentById = async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
-    const qrCodeContent = `https://student-management-server-mn17.onrender.com/api/admin/studentById/${student._id}`;
-    const qrCodeImage = await QRCode.toDataURL(qrCodeContent);
-    console.log(qrCodeImage)
+
+    const APPLICATION_URL = process.env.APPLICATION_URL;
+    const qrCodeContent = `${APPLICATION_URL}view/${studentId}`;
+    const qrCodeImage = await QRCode.toDataURL(qrCodeContent.toString(), {
+      errorCorrectionLevel: "H",
+      type: "image/jpeg",
+      quality: 0.2,
+      margin: 1,
+    });
     return res.status(200).json({
       status: 200,
       message: "Student fetched successfully",
