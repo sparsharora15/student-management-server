@@ -33,7 +33,7 @@ const login = async (req, res) => {
       if (admin.password !== md5Hash(password)) {
         return res.status(401).json({ error: "Incorrect password" });
       }
-      const token = jwt.sign({ admin }, process.env.JWTSECRETKET);
+      const token = jwt.sign({ user:admin }, process.env.JWTSECRETKET);
       return res
         .status(200)
         .json({ status: 200, message: "Logged in", token: token });
