@@ -614,7 +614,7 @@ const getStudentById = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const APPLICATION_URL = process.env.APPLICATION_URL;
+    const APPLICATION_URL = "https://student-management-client-rczm9up1r-sparsharora15s-projects.vercel.app/";
     const qrCodeContent = `${APPLICATION_URL}view/${studentId}`;
     const qrCodeImage = await QRCode.toDataURL(qrCodeContent.toString(), {
       errorCorrectionLevel: "H",
