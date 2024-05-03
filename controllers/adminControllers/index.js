@@ -33,7 +33,7 @@ const login = async (req, res) => {
       if (admin.password !== md5Hash(password)) {
         return res.status(401).json({ error: "Incorrect password" });
       }
-      const token = jwt.sign({ user:admin }, process.env.JWTSECRETKET);
+      const token = jwt.sign({ user: admin }, process.env.JWTSECRETKET);
       return res
         .status(200)
         .json({ status: 200, message: "Logged in", token: token });
@@ -41,7 +41,7 @@ const login = async (req, res) => {
       if (teacher.password !== md5Hash(password)) {
         return res.status(401).json({ error: "Incorrect password" });
       }
-      const token = jwt.sign({ user:teacher }, process.env.JWTSECRETKET);
+      const token = jwt.sign({ user: teacher }, process.env.JWTSECRETKET);
       return res
         .status(200)
         .json({ status: 200, message: "Logged in", token: token });
@@ -613,8 +613,7 @@ const getStudentById = async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
-
-    const APPLICATION_URL = "https://student-management-client-rczm9up1r-sparsharora15s-projects.vercel.app/";
+    const APPLICATION_URL = process.env.APPLICATION_URL;
     const qrCodeContent = `${APPLICATION_URL}view/${studentId}`;
     const qrCodeImage = await QRCode.toDataURL(qrCodeContent.toString(), {
       errorCorrectionLevel: "H",
