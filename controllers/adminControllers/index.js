@@ -683,6 +683,16 @@ const getStudentById = async (req, res) => {
 //     res.status(500).json({ message: "Internal server error" });
 //   }
 // };
+const getSemDetails = async (req, res) => {
+  try {
+    const { courseId } = req.query;
+    console.log(courseId)
+    const courseDeatils = await Course.findById({_id:courseId})
+    res.send(courseDeatils.semesters)
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 module.exports = {
   login,
@@ -701,4 +711,5 @@ module.exports = {
   createUser,
   getStudent,
   getStudentById,
+  getSemDetails,
 };

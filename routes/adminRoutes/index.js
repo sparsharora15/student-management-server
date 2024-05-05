@@ -17,6 +17,7 @@ const {
   createUser,
   getStudent,
   getStudentById,
+  getSemDetails,
 } = require("../../controllers/adminControllers");
 const { authUser } = require("../../midddleware/auth");
 const upload = require("../../midddleware/imageUploadMiddleware");
@@ -47,5 +48,6 @@ router.get("/getLectures", authUser, getLectures);
 router.post("/student", authUser, upload.single("profilePicture"), createUser);
 router.get("/student", authUser, getStudent);
 router.get("/studentById", getStudentById);
+router.get("/getSemDetails", authUser,getSemDetails);
 
 module.exports = router;
