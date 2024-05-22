@@ -686,9 +686,8 @@ const getStudentById = async (req, res) => {
 const getSemDetails = async (req, res) => {
   try {
     const { courseId } = req.query;
-    console.log(courseId)
-    const courseDeatils = await Course.findById({_id:courseId})
-    res.send(courseDeatils.semesters)
+    const courseDeatils = await Course.findById({ _id: courseId });
+    res.send(courseDeatils.semesters);
   } catch (err) {
     console.error(err);
   }
